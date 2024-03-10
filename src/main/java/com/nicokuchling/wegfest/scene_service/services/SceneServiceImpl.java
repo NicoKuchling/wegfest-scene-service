@@ -1,12 +1,14 @@
 package com.nicokuchling.wegfest.scene_service.services;
 
-import com.nicokuchling.wegfest.api.core.scene.Scene;
-import com.nicokuchling.wegfest.api.core.scene.SceneInteractionRecord;
-import com.nicokuchling.wegfest.api.core.scene.SceneInteractionRecordAggregate;
-import com.nicokuchling.wegfest.api.core.scene.SceneService;
+import com.nicokuchling.wegfest.api.core.scene.*;
+import com.nicokuchling.wegfest.api.core.scene.aggregates.SceneAggregate;
+import com.nicokuchling.wegfest.api.core.scene.aggregates.SceneInteractionRecordAggregate;
+import com.nicokuchling.wegfest.api.core.scene.services.SceneService;
 import com.nicokuchling.wegfest.api.core.survey.MultipleChoiceQuestion;
 import com.nicokuchling.wegfest.api.core.survey.SurveyResponse;
 import com.nicokuchling.wegfest.api.exceptions.InvalidInputException;
+import com.nicokuchling.wegfest.scene_service.services.factories.SceneAggregateFactory;
+import com.nicokuchling.wegfest.scene_service.services.factories.SceneInteractionRecordAggregateFactory;
 import com.nicokuchling.wegfest.shared.http.ServiceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +33,22 @@ public class SceneServiceImpl implements SceneService {
     }
 
     @Override
-    public Set<Scene> getAllScenes() {
+    public Set<SceneAggregate> getAllSceneAggregates() {
         LOG.debug("/scene return all available scenes");
 
+        Set<MultipleChoiceQuestion> questions = integration.getAllMultipleChoiceQuestions();
+        Set<Scene> scenes = getAllScenes();
+
+        Set<SceneAggregate> sceneAggregates = new HashSet<>();
+        scenes.forEach(scene -> {
+            SceneAggregate sceneAggregate = SceneAggregateFactory.from(scene, questions);
+            sceneAggregates.add(sceneAggregate);
+        });
+
+        return sceneAggregates;
+    }
+
+    private Set<Scene> getAllScenes() {
         Scene scene1 = new Scene(
                 1,
                 "scene-1",
@@ -60,11 +75,12 @@ public class SceneServiceImpl implements SceneService {
     @Override
     public List<SceneInteractionRecordAggregate> getSceneInteractionRecordAggregatesByIds(
             List<Integer> sceneInteractionRecordIds) {
+        LOG.debug("/scene/interaction/record get records for defined IDs: " + sceneInteractionRecordIds);
 
         List<SceneInteractionRecord> sceneInteractionRecords =
                 getSceneInteractionRecordsByIds(sceneInteractionRecordIds);
 
-        Set<Scene> scenes = getAllScenes();
+        Set<SceneAggregate> scenes = getAllSceneAggregates();
         Set<MultipleChoiceQuestion> questions = integration.getAllMultipleChoiceQuestions();
 
         List<Integer> surveyResponseIds = new ArrayList<>();
@@ -89,8 +105,6 @@ public class SceneServiceImpl implements SceneService {
     }
 
     private List<SceneInteractionRecord> getSceneInteractionRecordsByIds(List<Integer> sceneInteractionRecordIds) {
-        LOG.debug("/scene/interaction/record get records for defined IDs: " + sceneInteractionRecordIds);
-
         if(sceneInteractionRecordIds.isEmpty()) {
             throw new InvalidInputException(
                     "Please define one or more values for the query parameter: sceneInteractionRecordId");
