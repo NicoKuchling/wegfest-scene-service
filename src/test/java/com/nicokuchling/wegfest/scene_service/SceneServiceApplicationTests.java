@@ -1,4 +1,4 @@
-package com.nicokuchling.wegfest.sceneservice;
+package com.nicokuchling.wegfest.scene_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
