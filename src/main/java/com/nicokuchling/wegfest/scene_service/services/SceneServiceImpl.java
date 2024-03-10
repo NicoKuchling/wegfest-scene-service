@@ -2,7 +2,10 @@ package com.nicokuchling.wegfest.scene_service.services;
 
 import com.nicokuchling.wegfest.api.core.scene.Scene;
 import com.nicokuchling.wegfest.api.core.scene.SceneInteractionRecord;
+import com.nicokuchling.wegfest.api.core.scene.SceneInteractionRecordAggregate;
 import com.nicokuchling.wegfest.api.core.scene.SceneService;
+import com.nicokuchling.wegfest.api.core.survey.MultipleChoiceQuestion;
+import com.nicokuchling.wegfest.api.core.survey.SurveyResponse;
 import com.nicokuchling.wegfest.api.exceptions.InvalidInputException;
 import com.nicokuchling.wegfest.shared.http.ServiceUtil;
 import org.slf4j.Logger;
@@ -19,9 +22,12 @@ public class SceneServiceImpl implements SceneService {
 
     private ServiceUtil serviceUtil;
 
+    private SceneIntegration integration;
+
     @Autowired
-    public SceneServiceImpl(ServiceUtil serviceUtil) {
+    public SceneServiceImpl(ServiceUtil serviceUtil, SceneIntegration integration) {
         this.serviceUtil = serviceUtil;
+        this.integration = integration;
     }
 
     @Override
@@ -52,21 +58,67 @@ public class SceneServiceImpl implements SceneService {
     }
 
     @Override
-    public List<SceneInteractionRecord> getSceneInteractionRecordsByIds(List<Integer> sceneInteractionRecordId) {
-        LOG.debug("/scene/interaction/record get records for defined IDs: " + sceneInteractionRecordId);
+    public List<SceneInteractionRecordAggregate> getSceneInteractionRecordAggregatesByIds(
+            List<Integer> sceneInteractionRecordIds) {
 
-        if(sceneInteractionRecordId.isEmpty()) {
+        List<SceneInteractionRecord> sceneInteractionRecords =
+                getSceneInteractionRecordsByIds(sceneInteractionRecordIds);
+
+        Set<Scene> scenes = getAllScenes();
+        Set<MultipleChoiceQuestion> questions = integration.getAllMultipleChoiceQuestions();
+
+        List<Integer> surveyResponseIds = new ArrayList<>();
+        sceneInteractionRecords.forEach(record -> surveyResponseIds.add(record.getSurveyResponseId()));
+
+        Set<SurveyResponse> surveyResponses = integration.getSurveyResponsesByIds(surveyResponseIds);
+
+        List<SceneInteractionRecordAggregate> sceneInteractionRecordAggregates = new ArrayList<>();
+
+        sceneInteractionRecords.forEach(record -> {
+            SceneInteractionRecordAggregate aggregate = SceneInteractionRecordAggregateFactory.from(
+                    record,
+                    scenes,
+                    questions,
+                    surveyResponses,
+                    serviceUtil.getServiceAddress());
+
+            sceneInteractionRecordAggregates.add(aggregate);
+        });
+
+        return sceneInteractionRecordAggregates;
+    }
+
+    private List<SceneInteractionRecord> getSceneInteractionRecordsByIds(List<Integer> sceneInteractionRecordIds) {
+        LOG.debug("/scene/interaction/record get records for defined IDs: " + sceneInteractionRecordIds);
+
+        if(sceneInteractionRecordIds.isEmpty()) {
             throw new InvalidInputException(
                     "Please define one or more values for the query parameter: sceneInteractionRecordId");
         }
 
         List<SceneInteractionRecord> records = new ArrayList<>();
 
-        for (Integer id : sceneInteractionRecordId) {
-            SceneInteractionRecord record = new SceneInteractionRecord();
-            record.setSceneInteractionRecordId(id);
-            records.add(record);
-        }
+        SceneInteractionRecord record =
+                new SceneInteractionRecord(
+                        1,
+                        1,
+                        "unitySceneId",
+                        "playerPosition",
+                        SceneInteractionRecord.DAYTIME.DAY,
+                        SceneInteractionRecord.SPEEDLIMIT.MEDIUM,
+                        SceneInteractionRecord.FREQUENCY.LOW,
+                        SceneInteractionRecord.FREQUENCY.MEDIUM,
+                        false,
+                        false,
+                        100,
+                        100,
+                        1,
+                        1,
+                        1,
+                        1,
+                        serviceUtil.getServiceAddress());
+
+        records.add(record);
 
         if (records.isEmpty()) {
             throw new InvalidInputException("No records found for the given IDs");

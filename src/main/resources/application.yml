@@ -3,6 +3,11 @@ server.error.include-message: always
 
 spring.webflux.base-path: /wegfest
 
+app:
+  survey-service:
+    host: localhost
+    port: 7002
+
 logging:
   level:
     root: INFO
