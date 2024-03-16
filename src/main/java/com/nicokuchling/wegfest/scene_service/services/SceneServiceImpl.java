@@ -132,7 +132,49 @@ public class SceneServiceImpl implements SceneService {
                         1,
                         serviceUtil.getServiceAddress());
 
+        SceneInteractionRecord record2 =
+                new SceneInteractionRecord(
+                        2,
+                        1,
+                        "unitySceneId",
+                        "playerPosition",
+                        SceneInteractionRecord.DAYTIME.DAY,
+                        SceneInteractionRecord.SPEEDLIMIT.MEDIUM,
+                        SceneInteractionRecord.FREQUENCY.LOW,
+                        SceneInteractionRecord.FREQUENCY.MEDIUM,
+                        false,
+                        false,
+                        100,
+                        100,
+                        1,
+                        1,
+                        1,
+                        1,
+                        serviceUtil.getServiceAddress());
+
+        SceneInteractionRecord record3 =
+                new SceneInteractionRecord(
+                        3,
+                        1,
+                        "unitySceneId",
+                        "playerPosition",
+                        SceneInteractionRecord.DAYTIME.DAY,
+                        SceneInteractionRecord.SPEEDLIMIT.MEDIUM,
+                        SceneInteractionRecord.FREQUENCY.LOW,
+                        SceneInteractionRecord.FREQUENCY.MEDIUM,
+                        false,
+                        false,
+                        100,
+                        100,
+                        1,
+                        1,
+                        1,
+                        1,
+                        serviceUtil.getServiceAddress());
+
         records.add(record);
+        records.add(record2);
+        records.add(record3);
 
         if (records.isEmpty()) {
             throw new InvalidInputException("No records found for the given IDs");
